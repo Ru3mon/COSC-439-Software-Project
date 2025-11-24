@@ -60,6 +60,7 @@ class ChatServer:
                 elif message.startswith(utils.HEADER_FILE):
                     # Format: FILE<SEP>TargetUser<SEP>Filename<SEP>FileSize
                     try:
+                        print(f"[DEBUG] Received file header from {username}: {message}")
                         _, target, filename, filesize = message.split(utils.SEPARATOR)
                         filesize = int(filesize)
                         
@@ -69,6 +70,7 @@ class ChatServer:
                             header = f"{utils.HEADER_FILE}{utils.SEPARATOR}{username}{utils.SEPARATOR}{filename}{utils.SEPARATOR}{filesize}"
                             target_sock.send(header.encode(utils.FORMAT))
                             
+                            print(f"[DEBUG] Relaying {filesize} bytes to {target}...")
                             # Relay file data
                             remaining = filesize
                             while remaining > 0:
@@ -78,7 +80,7 @@ class ChatServer:
                                     break
                                 target_sock.send(data)
                                 remaining -= len(data)
-                            print(f"Relayed file {filename} from {username} to {target}")
+                            print(f"[DEBUG] Relayed file {filename} from {username} to {target}")
                         else:
                             # Consume the file data to clear the buffer if target not found
                             # This prevents the server from interpreting file bytes as commands
@@ -115,11 +117,12 @@ class ChatServer:
     def update_user_list(self):
         """Send the updated list of users to all clients."""
         users = ",".join(self.clients.keys())
+        print(f"[DEBUG] Sending user list: {users}")
         for client_sock in self.clients.values():
             try:
                 utils.send_msg(client_sock, utils.HEADER_LIST, users)
-            except:
-                pass
+            except Exception as e:
+                print(f"[DEBUG] Error sending user list: {e}")
 
     def start(self):
         while True:

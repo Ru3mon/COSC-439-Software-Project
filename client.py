@@ -188,16 +188,26 @@ class ChatClient:
                 
                 # Send Header: FILE<SEP>Target<SEP>Filename<SEP>FileSize
                 header = f"{utils.HEADER_FILE}{utils.SEPARATOR}{target}{utils.SEPARATOR}{basename}{utils.SEPARATOR}{filesize}"
+                print(f"[DEBUG] Sending file header: {header}")
                 self.sock.send(header.encode(utils.FORMAT))
                 
+                # Wait a bit to ensure server processes header before receiving raw bytes
+                # This prevents TCP packet coalescing from merging header + binary data
+                import time
+                time.sleep(0.2)
+
                 # Send File Data
+                print(f"[DEBUG] Sending file content...")
+                total_sent = 0
                 with open(filename, 'rb') as f:
                     while True:
                         bytes_read = f.read(utils.BUFFER_SIZE)
                         if not bytes_read:
                             break
                         self.sock.send(bytes_read)
+                        total_sent += len(bytes_read)
                 
+                print(f"[DEBUG] Sent {total_sent} bytes.")
                 self.display_message(f"Sent file {basename} to {target}", color="blue")
                 self.private_target = None
                 self.msg_entry.config(bg="white")
@@ -206,12 +216,19 @@ class ChatClient:
                 messagebox.showerror("File Error", f"Failed to send file: {e}")
 
     def display_message(self, message, color="black"):
+        self.root.after(0, lambda: self._display_message_impl(message, color))
+
+    def _display_message_impl(self, message, color):
         self.chat_area.config(state='normal')
         self.chat_area.insert(tk.END, message + "\n")
         self.chat_area.see(tk.END)
         self.chat_area.config(state='disabled')
 
     def update_user_list(self, user_str):
+        self.root.after(0, lambda: self._update_user_list_impl(user_str))
+
+    def _update_user_list_impl(self, user_str):
+        print(f"[DEBUG] Updating user list with: {user_str}")
         users = user_str.split(",")
         self.user_listbox.delete(0, tk.END)
         for user in users:
