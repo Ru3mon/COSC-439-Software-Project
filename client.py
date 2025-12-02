@@ -353,7 +353,7 @@ class ChatClient:
                             self.display_message(content, "General", tag='private')
                     elif header == utils.HEADER_FILE:
                         # Format: FILE<SEP>Sender<SEP>Filename<SEP>FileSize
-                        _, sender, filename, filesize = content.split(utils.SEPARATOR)
+                        sender, filename, filesize = content.split(utils.SEPARATOR)
                         filesize = int(filesize)
                         self.receive_file(sender, filename, filesize)
                     elif header == utils.HEADER_LIST:
